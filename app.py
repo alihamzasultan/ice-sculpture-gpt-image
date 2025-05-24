@@ -114,8 +114,7 @@ SCULPTURE_BASES = {
     "crystal base": os.path.join("bases", "crystal_base.png"),
     "frame base": os.path.join("bases", "frame_base.png"),
     "golf base": os.path.join("bases", "golf_base.png"),
-    "logo base": os.path.join("bases", "logo_base.png"),
-    "logo plynth base": os.path.join("bases", "logo_plynth_base.png"),
+   
     "plynth base": os.path.join("bases", "plynth_base.png"),
     "ring base": os.path.join("bases", "ring_base.png"),
     "tee base": os.path.join("bases", "tee_base.png"),
@@ -167,6 +166,10 @@ SCULPTURE_BASES = {
 
         #Topper
         "Topper": os.path.join("logos", "topper.png"),
+
+        #LOGOS
+    # "logo base": os.path.join("bases", "logo_base.png"),
+    # "logo plynth base": os.path.join("bases", "logo_plynth_base.png"),
 
     # Add more mappings as needed
 }
@@ -286,9 +289,11 @@ def chatbot():
         image_generation_prompt = f"""
         Conversation History:
         {conversation_context}
-       
+               
+        USER INPUT:
+        {user_input}
        STRICT INSTRUCTIONS FOR ICE SCULPTURE GENERATION:
-        
+
         1. SCULPTURE PRESERVATION:
            - Maintain EXACT shape, proportions, and details from the reference image
            - Do NOT alter, add, or remove any elements of the sculpture
@@ -298,11 +303,9 @@ def chatbot():
            - Render as crystal-clear, see-through ice
            - Include realistic light refraction and subtle imperfections
            - Surface should appear smooth and polished
-        
-        3. BACKGROUND TREATMENT:
-           - You may modify ONLY the background to match the requested theme: {user_input}
-           - Background must be subtle and not distract from the sculpture
-           - Keep background elements minimal and appropriate for an ice sculpture display
+
+        3. BACKGROUND AND ENVIRONMENT
+            -place the sculpture on a wooden table in a realistic environment or a country club.
         
         4. LIGHTING:
            - Maintain consistent lighting that showcases the sculpture
@@ -312,8 +315,15 @@ def chatbot():
            - NO changes to the sculpture structure
            - NO additional decorative elements
            - NO human figures or living creatures
+           - no elements detached from the sculpture even if requested. You will never make floating, or bits and peices that are not connected with the sculpture
+           - no small details
+           - no foggy ice
+
+        6.IMAGE QUALITY:
+         -Always create an HD high resolution image, captured by a high resolution camera.
+
         
-        Reference the provided image exactly as is, changing ONLY the background if requested.
+        Reference the provided image exactly as is.
         """
         
         try:
