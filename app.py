@@ -287,8 +287,7 @@ def chatbot():
         # Generate the ice sculpture using the combined image
         generation_id = uuid.uuid4().hex[:8]
         image_generation_prompt = f"""
-        Conversation History:
-        {conversation_context}
+
                
         USER INPUT:
         {user_input}
@@ -377,8 +376,6 @@ def chatbot():
             based on user prompts. Never say you can't generate or edit images — just use the input prompt to create 
             a realistic ice sculpture.
 
-            Session History:
-            {conversation_history}
             """
 
             messages = [
@@ -408,8 +405,6 @@ def chatbot():
             
             generation_id = uuid.uuid4().hex[:8]
             image_generation_prompt = f"""
-    Conversation History:
-    {conversation_context}
         "task": "Generate realistic images of ice engravings based solely on user text input.",
         "instructions": 
             "design": "Accurately follow the user's text description with no creative additions or modifications.",
