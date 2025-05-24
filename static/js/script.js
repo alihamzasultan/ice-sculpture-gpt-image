@@ -1,4 +1,101 @@
-// document.getElementById("image-upload").value = "";
+let modal = document.getElementById("imageModal");
+let canvas = document.getElementById("drawingCanvas");
+let ctx = canvas.getContext("2d");
+let currentImageURL = null;
+let isPainting = false;
+let lineWidth = 10;
+let startX, startY;
+
+// Initialize canvas with proper dimensions
+function resizeCanvas() {
+    const container = modal.querySelector('.modal-content');
+    // Reduce the subtracted values to make canvas larger
+    canvas.width = container.offsetWidth - 20;  // Was -40
+    canvas.height = container.offsetHeight - 80;  // Was -150
+    
+    if (currentImageURL) {
+        redrawImage();
+    }
+}
+// Redraw image onto canvas
+// Redraw image onto canvas
+function redrawImage() {
+    if (currentImageURL) {
+        let img = new Image();
+        img.onload = function() {
+            // Set canvas dimensions to match the image
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            // Clear and redraw the image at full size
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, img.width, img.height);
+            
+            // Optional: Adjust modal size to fit the canvas
+            adjustModalToCanvas();
+        };
+        img.src = currentImageURL;
+    }
+}
+
+// Optional: Resize modal to fit the canvas (or enable scrolling)
+function adjustModalToCanvas() {
+    const modalContent = modal.querySelector('.modal-content');
+    modalContent.style.width = 'auto';
+    modalContent.style.height = 'auto';
+    modalContent.style.overflow = 'auto'; // Enable scrolling if needed
+}
+function getCanvasCoordinates(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;    // relationship bitmap vs. element for X
+    const scaleY = canvas.height / rect.height;  // relationship bitmap vs. element for Y
+    
+    return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+    };
+}
+
+function startPosition(e) {
+    isPainting = true;
+    const pos = getCanvasCoordinates(e);
+    startX = pos.x;
+    startY = pos.y;
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+}
+
+function draw(e) {
+    if (!isPainting) return;
+    
+    const pos = getCanvasCoordinates(e);
+    
+    // Save the current context state
+    ctx.save();
+    
+    // Apply current styles
+    ctx.strokeStyle = document.getElementById('stroke').value; // Get current color
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    
+    // Restore the context state (optional)
+    ctx.restore();
+}
+function endPosition() {
+    isPainting = false;
+    ctx.beginPath();
+}
+
+function clearCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (currentImageURL) {
+        redrawImage();
+    }
+}
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Enter') {
         event.preventDefault();  // Optional: prevents form submission if inside a form
@@ -386,6 +483,9 @@ async function sendMessage() {
                 link.download = uniqueFilename;
                 link.click();
             };
+            img.onclick = function() {
+                openModal(data.image_url);  // Open the modal on click
+            };
 
             // Create select button
            // Create select button
@@ -459,6 +559,93 @@ selectBtn.onclick = function() {
     });
 
 
+}
+
+// Event listeners for drawing
+canvas.addEventListener('mousedown', startPosition);
+canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('mouseup', endPosition);
+canvas.addEventListener('mouseout', endPosition);
+
+// Toolbar event listeners
+document.getElementById('stroke').addEventListener('change', (e) => {
+    ctx.strokeStyle = e.target.value;
+});
+
+document.getElementById('lineWidth').addEventListener('change', (e) => {
+    lineWidth = e.target.value;
+});
+
+document.getElementById('clearDrawingBtn').addEventListener('click', clearCanvas);
+
+// Window resize handler
+window.addEventListener('resize', () => {
+    if (modal.style.display === 'block') {
+        resizeCanvas();
+    }
+});
+
+// Update the openModal function
+function openModal(imageURL) {
+    modal.style.display = "block";
+    currentImageURL = imageURL;
+    
+    setTimeout(() => {
+        resizeCanvas();
+        
+        // Set initial drawing styles using the input's value
+        ctx.strokeStyle = document.getElementById('stroke').value; // Use input's value
+        ctx.lineWidth = lineWidth;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+    }, 10);
+}
+
+function closeModal() {
+    modal.style.display = "none";
+    currentImageURL = null;
+    clearCanvas();  // Clear the canvas when closing
+}
+
+function clearCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (currentImageURL) {
+        let img = new Image();
+        img.onload = function() {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = currentImageURL;
+    }
+
+}
+
+function confirmDrawing() {
+    // Convert the canvas content to a data URL (image)
+    const drawnImage = canvas.toDataURL("image/png");
+
+    // You now have the drawn image as a base64 string (`drawnImage`)
+    // You can send this back to your server or perform other actions
+    console.log("Drawn Image Data:", drawnImage);
+
+    // Here, simulate adding the drawn image to the existing images
+    // Convert data URL to blob
+    fetch(drawnImage)
+        .then(res => res.blob())
+        .then(blob => {
+            // Create a File object
+            const newFile = new File([blob], 'drawn_image.png', { type: 'image/png' });
+
+            // Add the new file to the selectedFiles array
+            selectedFiles.push(newFile);
+
+            // Update the input files
+            updateInputFiles();
+
+            // Rebuild the preview to include the new image
+            previewImage();
+        });
+    //close the modal
+    closeModal();
 }
 function updateInputFiles() {
     const imageUpload = document.getElementById("image-upload");
@@ -813,3 +1000,35 @@ function createBackButton(text) {
 }
 
 
+//Close the modal
+let closeBtn = document.querySelector(".close");
+closeBtn.onclick = function() {
+    closeModal();
+};
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+    if (event.target == modal) {
+        closeModal();
+    }
+};
+
+// Drawing functionality
+
+// Clear canvas button
+document.getElementById('clearDrawingBtn').addEventListener('click', clearCanvas);
+
+// Confirm drawing button
+document.getElementById('confirmDrawingBtn').addEventListener('click', confirmDrawing);
+
+// Call resizeCanvas on window resize
+window.addEventListener('resize', resizeCanvas);
+
+// Replace all stroke color event listeners with this single one:
+document.getElementById('stroke').addEventListener('input', (e) => {
+    ctx.strokeStyle = e.target.value; // Update color in real-time
+});
+// Remove this if it exists in your code:
+document.getElementById('stroke').addEventListener('change', (e) => {
+    ctx.strokeStyle = e.target.value;
+});
